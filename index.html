@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Natenta - Pedidos de Focaccia Artesanal</title>
+    <!-- Google Fonts: Seaweed Script for branding & Montserrat for UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Seaweed+Script&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header / Logo de Natenta -->
+        <header class="main-header">
+            <h1 class="logo-text" id="natenta-logo">Natenta</h1>
+            <p class="tagline">Fermentos Naturales • Hecho con Amor</p>
+        </header>
+
+        <main class="main-content">
+            <!-- SECCIÓN 1: TAMAÑO -->
+            <section class="section-card" id="section-size">
+                <h2 class="section-title">1. Elegí el Tamaño</h2>
+                <div class="size-selector">
+                    <!-- Focaccia Chica -->
+                    <label class="size-option" for="size-chica" id="size-option-chica">
+                        <input type="radio" name="focaccia-size" id="size-chica" value="Chica" checked>
+                        <div class="size-content">
+                            <span class="size-name">Chica</span>
+                            <span class="size-weight">~350g</span>
+                            <span class="size-description">Masa madre base + 2 Toppings comunes</span>
+                            <span class="size-price" id="price-display-chica">$5.900</span>
+                        </div>
+                    </label>
+                    
+                    <!-- Focaccia Grande -->
+                    <label class="size-option" for="size-grande" id="size-option-grande">
+                        <input type="radio" name="focaccia-size" id="size-grande" value="Grande">
+                        <div class="size-content">
+                            <span class="size-name">Grande</span>
+                            <span class="size-weight">~700g</span>
+                            <span class="size-description">Masa madre base + 2 Toppings comunes</span>
+                            <span class="size-price" id="price-display-grande">$8.900</span>
+                        </div>
+                    </label>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 2: TOPPINGS -->
+            <section class="section-card" id="section-toppings">
+                <h2 class="section-title">2. Agregá los Toppings</h2>
+                <p class="section-subtitle">
+                    💡 La focaccia base incluye hasta 2 toppings de categoría <strong class="badge comum-badge">Común</strong>.
+                </p>
+
+                <!-- Grupo Común -->
+                <div class="topping-group">
+                    <h3 class="group-title">Comunes <span class="group-price-hint" id="hint-comun">+ $400 / + $800 extra</span></h3>
+                    <div class="toppings-grid" id="grid-comun">
+                        <!-- Renderizado dinámico -->
+                    </div>
+                </div>
+
+                <!-- Grupo Premium -->
+                <div class="topping-group">
+                    <h3 class="group-title">Premium <span class="group-price-hint" id="hint-premium">+ $1.000 / + $2.000 c/u</span></h3>
+                    <div class="toppings-grid" id="grid-premium">
+                        <!-- Renderizado dinámico -->
+                    </div>
+                </div>
+
+                <!-- Grupo Deluxe -->
+                <div class="topping-group">
+                    <h3 class="group-title">Deluxe <span class="group-price-hint" id="hint-deluxe">+ $2.000 / + $4.000 c/u</span></h3>
+                    <div class="toppings-grid" id="grid-deluxe">
+                        <!-- Renderizado dinámico -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- BOTÓN AGREGAR AL PEDIDO -->
+            <button type="button" class="btn-secondary" id="btn-add-to-cart">
+                <span>➕ Agregar al pedido</span>
+            </button>
+
+            <!-- SECCIÓN 3: DATOS DEL CLIENTE -->
+            <section class="section-card hidden" id="section-details">
+                <h2 class="section-title">3. Tus Datos para la Entrega</h2>
+                <form id="order-form" autocomplete="off" onsubmit="return false;">
+                    
+                    <div class="form-group">
+                        <label for="customer-name">Nombre y Apellido *</label>
+                        <input type="text" id="customer-name" name="customer-name" placeholder="Ej: Juan Pérez" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Método de Entrega *</label>
+                        <div class="delivery-toggle-container">
+                            <label class="delivery-toggle-option" for="delivery-pickup">
+                                <input type="radio" name="delivery-method" id="delivery-pickup" value="retiro" checked>
+                                <span>Retiro en Parque Centenario</span>
+                            </label>
+                            
+                            <label class="delivery-toggle-option" for="delivery-shipping" id="delivery-shipping-label">
+                                <input type="radio" name="delivery-method" id="delivery-shipping" value="envio">
+                                <span>Envío a domicilio</span>
+                            </label>
+                        </div>
+                        
+                        <!-- Mensaje de aviso de mínimo de envío -->
+                        <div class="delivery-warning hidden" id="delivery-warning-msg">
+                            ⚠️ Mínimo de compra para envío a domicilio: <strong id="delivery-min-amount">$10.000</strong>. 
+                            Te faltan <strong id="delivery-missing-amount">$4.100</strong> para habilitarlo.
+                        </div>
+                    </div>
+
+                    <!-- Campos Condicionales de Envío -->
+                    <div class="conditional-fields hidden" id="shipping-fields">
+                        <div class="form-group">
+                            <label for="shipping-address">Dirección Completa *</label>
+                            <input type="text" id="shipping-address" name="shipping-address" placeholder="Calle, Altura, Piso/Depto, Barrio">
+                        </div>
+                        <div class="form-group">
+                            <label for="shipping-date">Fecha de Envío *</label>
+                            <select id="shipping-date" name="shipping-date">
+                                <!-- Dinámico -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Campos Condicionales de Retiro -->
+                    <div class="conditional-fields" id="pickup-fields">
+                        <div class="form-group">
+                            <label for="pickup-date">Día de Retiro en Parque Centenario *</label>
+                            <select id="pickup-date" name="pickup-date">
+                                <!-- Dinámico -->
+                            </select>
+                            <span class="field-hint">Coordinamos el horario exacto por WhatsApp.</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Forma de Pago *</label>
+                        <div class="payment-options">
+                            <label class="payment-option" for="payment-cash">
+                                <input type="radio" name="payment-method" id="payment-cash" value="efectivo" checked>
+                                <div class="payment-content">
+                                    <span class="payment-title">Efectivo 💵</span>
+                                    <span class="payment-desc">Pagás al retirar/recibir</span>
+                                </div>
+                            </label>
+                            <label class="payment-option" for="payment-transfer">
+                                <input type="radio" name="payment-method" id="payment-transfer" value="transferencia">
+                                <div class="payment-content">
+                                    <span class="payment-title">Transferencia 🏦</span>
+                                    <span class="payment-desc">Te enviamos los datos de la cuenta</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                </form>
+
+                <button type="button" class="btn-primary btn-submit-full" id="btn-submit-order">
+                    <span>📨 Enviar Pedido</span>
+                </button>
+            </section>
+        </main>
+
+        <!-- PANEL LATERAL / CARRITO -->
+        <aside class="order-summary-panel">
+            <div class="summary-wrapper">
+                <div class="cart-panel" id="cart-panel-container">
+                    <h3 class="cart-panel-title">🛒 Tu Pedido</h3>
+                    <div class="cart-panel-items" id="cart-panel-items">
+                        <!-- Renderizado dinámico -->
+                    </div>
+                    <div class="cart-panel-empty" id="cart-panel-empty">
+                        <p>Todavía no agregaste ninguna focaccia.</p>
+                    </div>
+                    <div class="cart-panel-footer">
+                        <div class="summary-row">
+                            <span class="summary-label">Total del pedido:</span>
+                            <span class="total-price" id="summary-total-price">$5.900</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
