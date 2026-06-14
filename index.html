@@ -84,7 +84,18 @@
                 <span> Agregar al pedido</span>
             </button>
 
-            <!-- SECCIÓN 3: DATOS DEL CLIENTE -->
+            <!-- SECCIÓN 3: CARRITO (EN MOBILE SE VE ACÁ, EN DESKTOP EN EL PANEL) -->
+            <section class="section-card hidden" id="section-cart">
+                <h2 class="section-title"> Tu Pedido</h2>
+                <div id="cart-items">
+                    <!-- Renderizado dinámico -->
+                </div>
+                <div class="cart-empty" id="cart-empty">
+                    <p>Todavía no agregaste ninguna focaccia.</p>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 4: DATOS DEL CLIENTE -->
             <section class="section-card hidden" id="section-details">
                 <h2 class="section-title">3. Tus Datos para la Entrega</h2>
                 <form id="order-form" autocomplete="off" onsubmit="return false;">
@@ -161,31 +172,21 @@
                     </div>
 
                 </form>
-
-                <button type="button" class="btn-primary btn-submit-full" id="btn-submit-order">
-                    <span>📨 Enviar Pedido</span>
-                </button>
             </section>
         </main>
 
-        <!-- PANEL LATERAL / CARRITO -->
+        <!-- PANEL INFERIOR (MOBILE) / LATERAL (DESKTOP) -->
         <aside class="order-summary-panel">
             <div class="summary-wrapper">
-                <div class="cart-panel" id="cart-panel-container">
-                    <h3 class="cart-panel-title">🛒 Tu Pedido</h3>
-                    <div class="cart-panel-items" id="cart-panel-items">
-                        <!-- Renderizado dinámico -->
-                    </div>
-                    <div class="cart-panel-empty" id="cart-panel-empty">
-                        <p>Todavía no agregaste ninguna focaccia.</p>
-                    </div>
-                    <div class="cart-panel-footer">
-                        <div class="summary-row">
-                            <span class="summary-label">Total del pedido:</span>
-                            <span class="total-price" id="summary-total-price">$5.900</span>
-                        </div>
+                <div class="summary-info">
+                    <div class="summary-row">
+                        <span class="summary-label" id="panel-items-count">0 focaccias</span>
+                        <span class="total-price" id="summary-total-price">$0</span>
                     </div>
                 </div>
+                <button type="button" class="btn-primary" id="btn-submit-order">
+                    <span>📨 Enviar Pedido</span>
+                </button>
             </div>
         </aside>
     </div>

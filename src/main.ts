@@ -37,8 +37,10 @@ const summaryTotalPriceSpan = document.getElementById('summary-total-price') as 
 const btnSubmitOrder = document.getElementById('btn-submit-order') as HTMLButtonElement;
 
 const btnAddToCart = document.getElementById('btn-add-to-cart') as HTMLButtonElement;
-const cartPanelItems = document.getElementById('cart-panel-items') as HTMLDivElement;
-const cartPanelEmpty = document.getElementById('cart-panel-empty') as HTMLDivElement;
+const sectionCart = document.getElementById('section-cart') as HTMLElement;
+const cartItemsDiv = document.getElementById('cart-items') as HTMLDivElement;
+const cartEmptyDiv = document.getElementById('cart-empty') as HTMLDivElement;
+const panelItemsCount = document.getElementById('panel-items-count') as HTMLSpanElement;
 const sectionDetails = document.getElementById('section-details') as HTMLElement;
 
 function renderToppings() {
@@ -104,16 +106,18 @@ function populateDates() {
 }
 
 function renderCart() {
-  cartPanelItems.innerHTML = '';
+  cartItemsDiv.innerHTML = '';
   const items = cart.getItems();
 
   if (items.length === 0) {
-    cartPanelEmpty.classList.remove('hidden');
+    cartEmptyDiv.classList.remove('hidden');
+    sectionCart.classList.add('hidden');
     sectionDetails.classList.add('hidden');
     return;
   }
 
-  cartPanelEmpty.classList.add('hidden');
+  cartEmptyDiv.classList.add('hidden');
+  sectionCart.classList.remove('hidden');
   sectionDetails.classList.remove('hidden');
 
   items.forEach((item, index) => {
@@ -152,7 +156,7 @@ function renderCart() {
     row.appendChild(info);
     row.appendChild(price);
     row.appendChild(removeBtn);
-    cartPanelItems.appendChild(row);
+    cartItemsDiv.appendChild(row);
   });
 
   const totalLine = document.createElement('div');
@@ -164,7 +168,7 @@ function renderCart() {
   totalPrice.textContent = `$${cart.calculateTotal().toLocaleString('es-AR')}`;
   totalLine.appendChild(totalLabel);
   totalLine.appendChild(totalPrice);
-  cartPanelItems.appendChild(totalLine);
+  cartItemsDiv.appendChild(totalLine);
 }
 
 function resetCurrentItem() {
@@ -184,7 +188,9 @@ function updateUI() {
   currentItem.setSize(currentSize);
 
   const cartTotal = cart.calculateTotal();
+  const count = cart.getItemCount();
   summaryTotalPriceSpan.textContent = `$${cartTotal.toLocaleString('es-AR')}`;
+  panelItemsCount.textContent = count === 0 ? 'Sin items' : `${count} focaccia${count !== 1 ? 's' : ''}`;
   const isDeliveryAllowed = cartTotal >= CONFIG.MIN_DELIVERY_AMOUNT;
   deliveryMinAmountSpan.textContent = `$${CONFIG.MIN_DELIVERY_AMOUNT.toLocaleString('es-AR')}`;
 
