@@ -235,6 +235,18 @@ body {
   font-weight: 700;
   color: var(--color-text-main);
   margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-price-hint {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-terracotta);
+  background-color: rgba(235, 123, 88, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
 .toppings-grid {
@@ -414,6 +426,20 @@ body {
   font-weight: 700;
   color: var(--color-text-main);
   margin-bottom: 8px;
+}
+
+/* Fila de formulario para Piso/Depto/Torre */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 480px) {
+  .form-row {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .form-group input[type="text"],
@@ -650,6 +676,13 @@ body {
 }
 
 /* BOTÓN PRINCIPAL */
+.btn-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+  flex-shrink: 0;
+}
+
 .btn-primary {
   background-color: var(--color-olive);
   color: white;

@@ -61,7 +61,7 @@ export class Cart {
     this.items.forEach((item, index) => {
       msg += `\u{1F6D2} *Pedido #${index + 1}*\n`;
       msg += `\u{1F355} Focaccia ${item.getSize()} (${item.detectCategory()})\n`;
-      msg += `\u{1F33F} `;
+      msg += `\u{1F33F} Toppings: `;
       const toppings = item.getToppings();
       if (toppings.length === 0) {
         msg += `Solo base`;
@@ -83,7 +83,10 @@ export class Cart {
       } else {
         msg += `💬 *Costo de Envío:* A coordinar con el cliente\n`;
       }
-      msg += `\u{1F4CD} *Dirección:* ${details.address}\n`;
+      let addressLine = `\u{1F4CD} *Dirección:* ${details.address}`;
+      const extras = [details.floor ? `Piso ${details.floor}` : '', details.apartment ? `Depto ${details.apartment}` : '', details.tower ? `Torre ${details.tower}` : ''].filter(Boolean).join(', ');
+      if (extras) addressLine += ` (${extras})`;
+      msg += addressLine + `\n`;
       msg += `\u{1F4C5} *Fecha de Envío:* ${details.deliveryDate}\n`;
     } else {
       msg += `\u{1F4C5} *Día de Retiro:* ${details.deliveryDate}\n`;

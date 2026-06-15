@@ -20,7 +20,7 @@
         <main class="main-content">
             <!-- MENSAJE DE BIENVENIDA -->
             <div class="welcome-msg" id="welcome-msg">
-                ¡Bienvenidos! Pueden crear su pedido de focaccias completando el formulario.
+                🎉 ¡Bienvenidos! 🥳 Pueden crear su pedido de focaccias completando el formulario. 🍕✨
             </div>
 
             <!-- SECCIÓN 1: TAMAÑO -->
@@ -60,7 +60,7 @@
 
                 <!-- Grupo Común -->
                 <div class="topping-group">
-                    <h3 class="group-title">Comunes</h3>
+                    <h3 class="group-title">Comunes <span class="group-price-hint" id="hint-comun"></span></h3>
                     <div class="toppings-grid" id="grid-comun">
                         <!-- Renderizado dinámico -->
                     </div>
@@ -68,7 +68,7 @@
 
                 <!-- Grupo Premium -->
                 <div class="topping-group">
-                    <h3 class="group-title">Premium</h3>
+                    <h3 class="group-title">Premium <span class="group-price-hint" id="hint-premium"></span></h3>
                     <div class="toppings-grid" id="grid-premium">
                         <!-- Renderizado dinámico -->
                     </div>
@@ -76,7 +76,7 @@
 
                 <!-- Grupo Deluxe -->
                 <div class="topping-group">
-                    <h3 class="group-title">Deluxe</h3>
+                    <h3 class="group-title">Deluxe <span class="group-price-hint" id="hint-deluxe"></span></h3>
                     <div class="toppings-grid" id="grid-deluxe">
                         <!-- Renderizado dinámico -->
                     </div>
@@ -112,7 +112,7 @@
 
             <!-- SECCIÓN 3: CARRITO (EN MOBILE SE VE ACÁ, EN DESKTOP EN EL PANEL) -->
             <section class="section-card hidden" id="section-cart">
-                <h2 class="section-title"> Tu Pedido</h2>
+                <h2 class="section-title"> Tu pedido</h2>
                 <div id="cart-items">
                     <!-- Renderizado dinámico -->
                 </div>
@@ -158,8 +158,23 @@
                                 <input type="text" id="shipping-address" name="shipping-address" placeholder="Ej: Av. Corrientes 1234, Almagro" autocomplete="off">
                                 <div class="address-suggestions hidden" id="address-suggestions"></div>
                             </div>
-
                         </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="shipping-floor">Piso</label>
+                                <input type="text" id="shipping-floor" name="shipping-floor" placeholder="Ej: 3">
+                            </div>
+                            <div class="form-group">
+                                <label for="shipping-apartment">Departamento</label>
+                                <input type="text" id="shipping-apartment" name="shipping-apartment" placeholder="Ej: B">
+                            </div>
+                            <div class="form-group">
+                                <label for="shipping-tower">Torre</label>
+                                <input type="text" id="shipping-tower" name="shipping-tower" placeholder="Ej: 2">
+                            </div>
+                        </div>
+
                         <div class="form-group">
                             <label for="shipping-date">Fecha de Envío *</label>
                             <select id="shipping-date" name="shipping-date">
@@ -216,7 +231,7 @@
                     </div>
                 </div>
                 <button type="button" class="btn-primary" id="btn-submit-order">
-                    <span>📨 Enviar Pedido</span>
+                    <img src="./carticon.svg" alt="" class="btn-icon"><span>Enviar pedido</span>
                 </button>
 
                 <!-- CARD DE CONTACTO WHATSAPP (MOBILE) -->

@@ -7,7 +7,7 @@ import type { Suggestion } from './geo';
 
 const FINISHING_ICONS: Record<string, string> = {
   pesto: '🌿',
-  aceite_oliva: '🫒',
+  aceite_oliva: '🫗',
   almibar: '🍯',
   romero: '🌱',
   sal_gruesa: '🧂'
@@ -34,6 +34,9 @@ const deliveryInfo = document.getElementById('delivery-info') as HTMLDivElement;
 
 const shippingFields = document.getElementById('shipping-fields') as HTMLDivElement;
 const shippingAddressInput = document.getElementById('shipping-address') as HTMLInputElement;
+const shippingFloorInput = document.getElementById('shipping-floor') as HTMLInputElement;
+const shippingApartmentInput = document.getElementById('shipping-apartment') as HTMLInputElement;
+const shippingTowerInput = document.getElementById('shipping-tower') as HTMLInputElement;
 const shippingDateSelect = document.getElementById('shipping-date') as HTMLSelectElement;
 const addressSuggestions = document.getElementById('address-suggestions') as HTMLDivElement;
 const pickupFields = document.getElementById('pickup-fields') as HTMLDivElement;
@@ -391,6 +394,14 @@ function updateToppingPrices() {
   const precioPremium = CONFIG.TOPPING_EXTRA_PRICES['Premium'][currentSize];
   const precioDeluxe = CONFIG.TOPPING_EXTRA_PRICES['Deluxe'][currentSize];
 
+  // Precio por categoría en el título del grupo
+  const hintComun = document.getElementById('hint-comun');
+  if (hintComun) hintComun.textContent = `Extra: +$${precioComun.toLocaleString('es-AR')}`;
+  const hintPremium = document.getElementById('hint-premium');
+  if (hintPremium) hintPremium.textContent = `Extra: +$${precioPremium.toLocaleString('es-AR')}`;
+  const hintDeluxe = document.getElementById('hint-deluxe');
+  if (hintDeluxe) hintDeluxe.textContent = `Extra: +$${precioDeluxe.toLocaleString('es-AR')}`;
+
   // Precio individual de cada tarjeta
   CONFIG.TOPPINGS_LIST.forEach(topping => {
     const priceSpan = document.getElementById(`price-${topping.id}`);
@@ -554,10 +565,17 @@ function submitOrder() {
 
   const paymentMethod = paymentTransferRadio.checked ? 'transferencia' : 'efectivo';
 
+  const floor = shippingFloorInput.value.trim() || undefined;
+  const apartment = shippingApartmentInput.value.trim() || undefined;
+  const tower = shippingTowerInput.value.trim() || undefined;
+
   const details: CustomerDetails = {
     name,
     deliveryMethod,
     address: deliveryMethod === 'envio' ? address : undefined,
+    floor,
+    apartment,
+    tower,
     deliveryDate,
     paymentMethod
   };
