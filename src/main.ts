@@ -2,9 +2,22 @@ import { CONFIG } from './config';
 import { FocacciaOrder } from './models/FocacciaOrder';
 import { Cart } from './models/Cart';
 import type { DeliveryMethod, CustomerDetails } from './types';
+import { searchAddress } from './geo';
+import type { Suggestion } from './geo';
+
+const FINISHING_ICONS: Record<string, string> = {
+  pesto: '🌿',
+  aceite_oliva: '🫒',
+  almibar: '🍯',
+  romero: '🌱',
+  sal_gruesa: '🧂'
+};
 
 const cart = new Cart();
 const currentItem = new FocacciaOrder();
+
+// Estado para la dirección seleccionada del autocompletado
+let selectedSuggestion: Suggestion | null = null;
 
 const gridComun = document.getElementById('grid-comun') as HTMLDivElement;
 const gridPremium = document.getElementById('grid-premium') as HTMLDivElement;
@@ -17,16 +30,12 @@ const customerNameInput = document.getElementById('customer-name') as HTMLInputE
 
 const deliveryPickupRadio = document.getElementById('delivery-pickup') as HTMLInputElement;
 const deliveryShippingRadio = document.getElementById('delivery-shipping') as HTMLInputElement;
-const deliveryShippingLabel = document.getElementById('delivery-shipping-label') as HTMLLabelElement;
-
-const deliveryWarningMsg = document.getElementById('delivery-warning-msg') as HTMLDivElement;
-const deliveryMinAmountSpan = document.getElementById('delivery-min-amount') as HTMLSpanElement;
-const deliveryMissingAmountSpan = document.getElementById('delivery-missing-amount') as HTMLSpanElement;
+const deliveryInfo = document.getElementById('delivery-info') as HTMLDivElement;
 
 const shippingFields = document.getElementById('shipping-fields') as HTMLDivElement;
 const shippingAddressInput = document.getElementById('shipping-address') as HTMLInputElement;
 const shippingDateSelect = document.getElementById('shipping-date') as HTMLSelectElement;
-
+const addressSuggestions = document.getElementById('address-suggestions') as HTMLDivElement;
 const pickupFields = document.getElementById('pickup-fields') as HTMLDivElement;
 const pickupDateSelect = document.getElementById('pickup-date') as HTMLSelectElement;
 
@@ -42,6 +51,14 @@ const cartItemsDiv = document.getElementById('cart-items') as HTMLDivElement;
 const cartEmptyDiv = document.getElementById('cart-empty') as HTMLDivElement;
 const panelItemsCount = document.getElementById('panel-items-count') as HTMLSpanElement;
 const sectionDetails = document.getElementById('section-details') as HTMLElement;
+
+const gridFinishing = document.getElementById('grid-finishing') as HTMLDivElement;
+
+const currentPreview = document.getElementById('current-preview') as HTMLDivElement;
+const previewPrice = document.getElementById('preview-price') as HTMLSpanElement;
+const previewSize = document.getElementById('preview-size') as HTMLSpanElement;
+const previewToppings = document.getElementById('preview-toppings') as HTMLSpanElement;
+const previewFinishing = document.getElementById('preview-finishing') as HTMLSpanElement;
 
 function renderToppings() {
   gridComun.innerHTML = '';
@@ -63,8 +80,14 @@ function renderToppings() {
     nameSpan.className = 'topping-name';
     nameSpan.textContent = topping.name;
 
+    const priceSpan = document.createElement('span');
+    priceSpan.className = 'topping-price';
+    priceSpan.id = `price-${topping.id}`;
+    priceSpan.textContent = '';
+
     card.appendChild(checkbox);
     card.appendChild(nameSpan);
+    card.appendChild(priceSpan);
 
     checkbox.addEventListener('change', () => {
       if (checkbox.checked) {
@@ -84,6 +107,51 @@ function renderToppings() {
     } else if (topping.category === 'Deluxe') {
       gridDeluxe.appendChild(card);
     }
+  });
+}
+
+function renderFinishingOptions() {
+  gridFinishing.innerHTML = '';
+
+  CONFIG.FINISHING_OPTIONS.forEach(opt => {
+    const card = document.createElement('label');
+    card.className = 'finishing-card';
+    card.setAttribute('for', `finishing-${opt.id}`);
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = `finishing-${opt.id}`;
+    checkbox.value = opt.id;
+
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'finishing-icon';
+    iconSpan.textContent = FINISHING_ICONS[opt.id] || '✨';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'finishing-name';
+    nameSpan.textContent = opt.name;
+
+    const freeSpan = document.createElement('span');
+    freeSpan.className = 'finishing-price';
+    freeSpan.textContent = 'Sin cargo';
+
+    card.appendChild(checkbox);
+    card.appendChild(iconSpan);
+    card.appendChild(nameSpan);
+    card.appendChild(freeSpan);
+
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        currentItem.toggleFinishing(opt.name);
+        card.classList.add('active');
+      } else {
+        currentItem.toggleFinishing(opt.name);
+        card.classList.remove('active');
+      }
+      updateUI();
+    });
+
+    gridFinishing.appendChild(card);
   });
 }
 
@@ -140,6 +208,20 @@ function renderCart() {
     info.appendChild(title);
     info.appendChild(toppings);
 
+    // Terminación en el carrito
+    const finishingList = item.getFinishing();
+    if (finishingList.length > 0) {
+      const finEl = document.createElement('div');
+      finEl.className = 'cart-item-finishing';
+      const parts = finishingList.map(name => {
+        const opt = CONFIG.FINISHING_OPTIONS.find(o => o.name === name);
+        const icon = opt ? (FINISHING_ICONS[opt.id] || '🧂') : '🧂';
+        return `${icon} ${name}`;
+      });
+      finEl.textContent = `Terminación: ${parts.join(' · ')}`;
+      info.appendChild(finEl);
+    }
+
     const price = document.createElement('div');
     price.className = 'cart-item-price';
     price.textContent = `$${item.calculateTotal().toLocaleString('es-AR')}`;
@@ -172,7 +254,7 @@ function renderCart() {
 }
 
 function resetCurrentItem() {
-  currentItem.clearToppings();
+  currentItem.clearAll();
   currentItem.setSize('Chica');
   sizeChicaRadio.checked = true;
 
@@ -181,33 +263,193 @@ function resetCurrentItem() {
     const chk = card.querySelector('input[type="checkbox"]') as HTMLInputElement;
     if (chk) chk.checked = false;
   });
+
+  document.querySelectorAll('.finishing-card').forEach(card => {
+    card.classList.remove('active');
+    const chk = card.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    if (chk) chk.checked = false;
+  });
 }
+
+// ---------------------------------------------------------------------------
+// Autocompletado de direcciones con OpenStreetMap Nominatim
+// ---------------------------------------------------------------------------
+
+function debounce<T extends (...args: any[]) => any>(fn: T, ms: number) {
+  let timer: ReturnType<typeof setTimeout>;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  };
+}
+
+function renderSuggestions(suggestions: Suggestion[]) {
+  addressSuggestions.innerHTML = '';
+
+  if (suggestions.length === 0) {
+    addressSuggestions.classList.add('hidden');
+    return;
+  }
+
+  suggestions.forEach(s => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'suggestion-item';
+
+    // Resaltar la parte del display que coincide con la calle + altura
+    const titleEl = document.createElement('span');
+    titleEl.className = 'suggestion-title';
+    const streetParts = [s.housenumber, s.street].filter(Boolean).join(' ');
+    titleEl.textContent = streetParts || s.displayName.split(',')[0];
+
+    const detailEl = document.createElement('span');
+    detailEl.className = 'suggestion-detail';
+    detailEl.textContent = [s.suburb, 'CABA'].filter(Boolean).join(', ');
+
+    item.appendChild(titleEl);
+    item.appendChild(detailEl);
+
+    item.addEventListener('click', () => {
+      selectSuggestion(s);
+    });
+
+    addressSuggestions.appendChild(item);
+  });
+
+  addressSuggestions.classList.remove('hidden');
+}
+
+function selectSuggestion(s: Suggestion) {
+  selectedSuggestion = s;
+  shippingAddressInput.value = s.displayName;
+  addressSuggestions.classList.add('hidden');
+}
+
+function resetAddressState() {
+  selectedSuggestion = null;
+  addressSuggestions.classList.add('hidden');
+}
+
+// Buscar direcciones con debounce
+const debouncedSearch = debounce(async (query: string) => {
+  // Si es modo envío, buscamos sugerencias
+  if (!deliveryShippingRadio.checked) return;
+
+  const suggestions = await searchAddress(query);
+  renderSuggestions(suggestions);
+}, 400);
+
+// ---------------------------------------------------------------------------
+// Fin autocompletado
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Preview del item actual (lo que está armando el usuario)
+// ---------------------------------------------------------------------------
+
+function updateCurrentPreview() {
+  const currentSize = sizeGrandeRadio.checked ? 'Grande' : 'Chica';
+  const total = currentItem.calculateTotal();
+
+  previewPrice.textContent = `$${total.toLocaleString('es-AR')}`;
+  previewSize.textContent = `Focaccia ${currentSize}`;
+
+  const toppings = currentItem.getToppings();
+  if (toppings.length === 0) {
+    previewToppings.textContent = 'Solo base (sin toppings extras)';
+  } else {
+    previewToppings.textContent = toppings.map(t => t.name).join(', ');
+  }
+
+  // Mostrar la(s) terminación(es) seleccionada(s) en el preview
+  const finishingList = currentItem.getFinishing();
+  if (finishingList.length > 0) {
+    const parts = finishingList.map(name => {
+      const opt = CONFIG.FINISHING_OPTIONS.find(o => o.name === name);
+      const icon = opt ? (FINISHING_ICONS[opt.id] || '✨') : '✨';
+      return `${icon} ${name}`;
+    });
+    previewFinishing.textContent = `Terminación: ${parts.join(' · ')}`;
+    previewFinishing.classList.remove('hidden');
+  } else {
+    previewFinishing.classList.add('hidden');
+  }
+
+  currentPreview.classList.remove('hidden');
+}
+
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Precios dinámicos según tamaño seleccionado
+// ---------------------------------------------------------------------------
+
+function updateToppingPrices() {
+  const currentSize = sizeGrandeRadio.checked ? 'Grande' : 'Chica';
+  const comunes = currentItem.getToppings().filter(t => t.category === 'Común');
+  const precioComun = CONFIG.TOPPING_EXTRA_PRICES['Común'][currentSize];
+  const precioPremium = CONFIG.TOPPING_EXTRA_PRICES['Premium'][currentSize];
+  const precioDeluxe = CONFIG.TOPPING_EXTRA_PRICES['Deluxe'][currentSize];
+
+  // Precio individual de cada tarjeta
+  CONFIG.TOPPINGS_LIST.forEach(topping => {
+    const priceSpan = document.getElementById(`price-${topping.id}`);
+    if (!priceSpan) return;
+
+    const isChecked = currentItem.getToppings().some(t => t.id === topping.id);
+
+    if (topping.category === 'Común') {
+      if (isChecked) {
+        // Buscar qué número de común es (ordenado por como aparecen en getToppings)
+        const idx = comunes.findIndex(t => t.id === topping.id);
+        if (idx >= 2) {
+          priceSpan.textContent = `+$${precioComun.toLocaleString('es-AR')}`;
+          priceSpan.className = 'topping-price has-cost';
+        } else {
+          priceSpan.textContent = 'Sin cargo ✓';
+          priceSpan.className = 'topping-price free';
+        }
+      } else {
+        priceSpan.textContent = '';
+        priceSpan.className = 'topping-price';
+      }
+    } else {
+      // Premium / Deluxe — siempre muestran el precio
+      const price = topping.category === 'Premium' ? precioPremium : precioDeluxe;
+      priceSpan.textContent = `+$${price.toLocaleString('es-AR')}`;
+      priceSpan.className = 'topping-price has-cost';
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
 
 function updateUI() {
   const currentSize = sizeGrandeRadio.checked ? 'Grande' : 'Chica';
   currentItem.setSize(currentSize);
 
+  // Precios dinámicos según tamaño
+  updateToppingPrices();
+
   const cartTotal = cart.calculateTotal();
   const count = cart.getItemCount();
   summaryTotalPriceSpan.textContent = `$${cartTotal.toLocaleString('es-AR')}`;
   panelItemsCount.textContent = count === 0 ? 'Sin items' : `${count} focaccia${count !== 1 ? 's' : ''}`;
-  const isDeliveryAllowed = cartTotal >= CONFIG.MIN_DELIVERY_AMOUNT;
-  deliveryMinAmountSpan.textContent = `$${CONFIG.MIN_DELIVERY_AMOUNT.toLocaleString('es-AR')}`;
 
-  if (isDeliveryAllowed) {
-    deliveryShippingLabel.classList.remove('disabled');
-    deliveryWarningMsg.classList.add('hidden');
+  // Preview del item actual
+  updateCurrentPreview();
+
+  // Info de envío: gratis o a coordinar
+  const isFreeDelivery = cartTotal >= CONFIG.MIN_DELIVERY_AMOUNT;
+  if (isFreeDelivery) {
+    deliveryInfo.className = 'delivery-info delivery-info-free';
+    deliveryInfo.innerHTML = `🎉 Envío a domicilio gratis por compras mayores a <strong>$${CONFIG.MIN_DELIVERY_AMOUNT.toLocaleString('es-AR')}</strong>`;
+    deliveryInfo.classList.remove('hidden');
   } else {
-    deliveryShippingLabel.classList.add('disabled');
-
-    if (deliveryShippingRadio.checked) {
-      deliveryPickupRadio.checked = true;
-      toggleDeliveryFields('retiro');
-    }
-
     const missing = CONFIG.MIN_DELIVERY_AMOUNT - cartTotal;
-    deliveryMissingAmountSpan.textContent = `$${missing.toLocaleString('es-AR')}`;
-    deliveryWarningMsg.classList.remove('hidden');
+    deliveryInfo.className = 'delivery-info delivery-info-pay';
+    deliveryInfo.innerHTML = `📦 Los envíos a domicilio son en <strong>CABA</strong> y <strong>se coordinan con el cliente</strong>. Te faltan <strong>$${missing.toLocaleString('es-AR')}</strong> para envío a domicilio gratis.`;
+    deliveryInfo.classList.remove('hidden');
   }
 }
 
@@ -220,6 +462,8 @@ function toggleDeliveryFields(method: DeliveryMethod) {
     shippingFields.classList.add('hidden');
     shippingAddressInput.removeAttribute('required');
     pickupFields.classList.remove('hidden');
+    // Si cambia a retiro, reseteamos validación de dirección
+    resetAddressState();
   }
 }
 
@@ -235,11 +479,6 @@ function setupEventListeners() {
 
   deliveryShippingRadio.addEventListener('change', () => {
     if (deliveryShippingRadio.checked) {
-      if (!cart.isDeliveryAllowed()) {
-        deliveryPickupRadio.checked = true;
-        alert(`¡Ups! El mínimo de compra para envíos es de $${CONFIG.MIN_DELIVERY_AMOUNT.toLocaleString('es-AR')}. Agregá más toppings para habilitarlo.`);
-        return;
-      }
       toggleDeliveryFields('envio');
     }
   });
@@ -248,6 +487,7 @@ function setupEventListeners() {
     const item = new FocacciaOrder();
     item.setSize(currentItem.getSize());
     currentItem.getToppings().forEach(t => item.addTopping(t));
+    currentItem.getFinishing().forEach(name => item.toggleFinishing(name));
     cart.addItem(item);
     renderCart();
     resetCurrentItem();
@@ -255,6 +495,32 @@ function setupEventListeners() {
   });
 
   btnSubmitOrder.addEventListener('click', submitOrder);
+
+  // Autocompletado de dirección
+  shippingAddressInput.addEventListener('input', () => {
+    resetAddressState();
+    debouncedSearch(shippingAddressInput.value);
+  });
+
+  // WhatsApp contacto (mobile + desktop)
+  function handleContactWhatsappClick() {
+    const msg = encodeURIComponent('Hola me comunico desde el sitio de pedidos, quiero consultarte algo');
+    window.open(`https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${msg}`, '_blank');
+  }
+  document.getElementById('contact-whatsapp-desktop')?.addEventListener('click', handleContactWhatsappClick);
+  document.getElementById('contact-whatsapp-mobile')?.addEventListener('click', handleContactWhatsappClick);
+
+  // Cerrar sugerencias al hacer clic fuera
+  document.addEventListener('click', (e) => {
+    if (!(e.target as Element)?.closest('.address-input-wrapper')) {
+      addressSuggestions.classList.add('hidden');
+    }
+  });
+
+  // Prevenir que el formulario recargue la página
+  document.getElementById('order-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+  });
 }
 
 function submitOrder() {
@@ -306,6 +572,7 @@ function submitOrder() {
 
 document.addEventListener('DOMContentLoaded', () => {
   renderToppings();
+  renderFinishingOptions();
   populateDates();
   setupEventListeners();
   renderCart();

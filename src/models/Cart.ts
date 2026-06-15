@@ -44,7 +44,7 @@ export class Cart {
     return 'Común';
   }
 
-  isDeliveryAllowed(): boolean {
+  isDeliveryFree(): boolean {
     return this.calculateTotal() >= CONFIG.MIN_DELIVERY_AMOUNT;
   }
 
@@ -53,6 +53,7 @@ export class Cart {
 
     const details = this.customerDetails;
     const isEnvio = details.deliveryMethod === 'envio';
+    const total = this.calculateTotal();
 
     let msg = `\u{1F355} *Nuevo Pedido - Natenta*\n\n`;
     msg += `\u{1F464} *Cliente:* ${details.name}\n\n`;
@@ -67,11 +68,21 @@ export class Cart {
       } else {
         msg += toppings.map(t => `${t.name}`).join(', ');
       }
-      msg += `\n\n`;
+      msg += `\n`;
+      const finishingList = item.getFinishing();
+      if (finishingList.length > 0) {
+        msg += `\u{1F9F4} Terminación: ${finishingList.join(', ')}\n`;
+      }
+      msg += `\n`;
     });
 
     msg += `\u{1F4E6} *Modo de Entrega:* ${isEnvio ? 'Envío a domicilio' : 'Retiro por Parque Centenario'}\n`;
     if (isEnvio) {
+      if (this.isDeliveryFree()) {
+        msg += `✨ *Costo de Envío:* Gratis\n`;
+      } else {
+        msg += `💬 *Costo de Envío:* A coordinar con el cliente\n`;
+      }
       msg += `\u{1F4CD} *Dirección:* ${details.address}\n`;
       msg += `\u{1F4C5} *Fecha de Envío:* ${details.deliveryDate}\n`;
     } else {
@@ -79,7 +90,7 @@ export class Cart {
     }
 
     msg += `\n\u{1F4B3} *Forma de Pago:* ${details.paymentMethod === 'efectivo' ? 'Efectivo' : 'Transferencia Bancaria'}\n`;
-    msg += `\u{1F4B0} *Total del Pedido:* $${this.calculateTotal().toLocaleString('es-AR')} ARS\n\n`;
+    msg += `\u{1F4B0} *Total del Pedido:* $${total.toLocaleString('es-AR')} ARS\n\n`;
     msg += `¡Muchas gracias! Quedo a la espera de tu confirmación.`;
 
     return encodeURIComponent(msg);

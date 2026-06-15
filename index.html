@@ -14,14 +14,18 @@
     <div class="app-container">
         <!-- Header / Logo de Natenta -->
         <header class="main-header">
-            <h1 class="logo-text" id="natenta-logo">Natenta</h1>
-            <p class="tagline">Fermentos Naturales • Hecho con Amor</p>
+            <img src="./logo.png" alt="Natenta - Fermentos Naturales" class="logo-img" id="natenta-logo">
         </header>
 
         <main class="main-content">
+            <!-- MENSAJE DE BIENVENIDA -->
+            <div class="welcome-msg" id="welcome-msg">
+                ¡Bienvenidos! Pueden crear su pedido de focaccias completando el formulario.
+            </div>
+
             <!-- SECCIÓN 1: TAMAÑO -->
             <section class="section-card" id="section-size">
-                <h2 class="section-title">1. Elegí el Tamaño</h2>
+                <h2 class="section-title">1. Elegí el tamaño</h2>
                 <div class="size-selector">
                     <!-- Focaccia Chica -->
                     <label class="size-option" for="size-chica" id="size-option-chica">
@@ -29,7 +33,7 @@
                         <div class="size-content">
                             <span class="size-name">Chica</span>
                             <span class="size-weight">~350g</span>
-                            <span class="size-description">Masa madre base + 2 Toppings comunes</span>
+                            <span class="size-description">Masa madre base + 2 toppings comunes</span>
                             <span class="size-price" id="price-display-chica">$5.900</span>
                         </div>
                     </label>
@@ -40,7 +44,7 @@
                         <div class="size-content">
                             <span class="size-name">Grande</span>
                             <span class="size-weight">~700g</span>
-                            <span class="size-description">Masa madre base + 2 Toppings comunes</span>
+                            <span class="size-description">Masa madre base + 2 toppings comunes</span>
                             <span class="size-price" id="price-display-grande">$8.900</span>
                         </div>
                     </label>
@@ -49,14 +53,14 @@
 
             <!-- SECCIÓN 2: TOPPINGS -->
             <section class="section-card" id="section-toppings">
-                <h2 class="section-title">2. Agregá los Toppings</h2>
+                <h2 class="section-title">2. Agregá los toppings</h2>
                 <p class="section-subtitle">
-                    💡 La focaccia base incluye hasta 2 toppings de categoría <strong class="badge comum-badge">Común</strong>.
+                    💡 Cada focaccia incluye <strong>2 toppings comunes sin cargo</strong>. A partir del 3er común y todos los Premium/Deluxe tienen costo extra según el tamaño elegido.
                 </p>
 
                 <!-- Grupo Común -->
                 <div class="topping-group">
-                    <h3 class="group-title">Comunes <span class="group-price-hint" id="hint-comun">+ $400 / + $800 extra</span></h3>
+                    <h3 class="group-title">Comunes</h3>
                     <div class="toppings-grid" id="grid-comun">
                         <!-- Renderizado dinámico -->
                     </div>
@@ -64,7 +68,7 @@
 
                 <!-- Grupo Premium -->
                 <div class="topping-group">
-                    <h3 class="group-title">Premium <span class="group-price-hint" id="hint-premium">+ $1.000 / + $2.000 c/u</span></h3>
+                    <h3 class="group-title">Premium</h3>
                     <div class="toppings-grid" id="grid-premium">
                         <!-- Renderizado dinámico -->
                     </div>
@@ -72,12 +76,34 @@
 
                 <!-- Grupo Deluxe -->
                 <div class="topping-group">
-                    <h3 class="group-title">Deluxe <span class="group-price-hint" id="hint-deluxe">+ $2.000 / + $4.000 c/u</span></h3>
+                    <h3 class="group-title">Deluxe</h3>
                     <div class="toppings-grid" id="grid-deluxe">
                         <!-- Renderizado dinámico -->
                     </div>
                 </div>
             </section>
+
+            <!-- SECCIÓN 3: TERMINACIÓN -->
+            <section class="section-card" id="section-finishing">
+                <h2 class="section-title">3. Elegí la terminación</h2>
+                <p class="section-subtitle">💡 El toque final para tu focaccia. Todas las opciones son <strong>sin cargo</strong>.</p>
+                <div class="finishing-grid" id="grid-finishing">
+                    <!-- Renderizado dinámico -->
+                </div>
+            </section>
+
+            <!-- PREVIEW DE LA FOCACCIA ACTUAL -->
+            <div class="current-preview hidden" id="current-preview">
+                <div class="preview-header">
+                    <span class="preview-title">Esta focaccia</span>
+                    <span class="preview-price" id="preview-price">$0</span>
+                </div>
+                <div class="preview-details" id="preview-details">
+                    <span class="preview-size" id="preview-size">Chica</span>
+                    <span class="preview-toppings" id="preview-toppings">Sin toppings</span>
+                    <span class="preview-finishing hidden" id="preview-finishing"></span>
+                </div>
+            </div>
 
             <!-- BOTÓN AGREGAR AL PEDIDO -->
             <button type="button" class="btn-secondary" id="btn-add-to-cart">
@@ -97,7 +123,7 @@
 
             <!-- SECCIÓN 4: DATOS DEL CLIENTE -->
             <section class="section-card hidden" id="section-details">
-                <h2 class="section-title">3. Tus Datos para la Entrega</h2>
+                <h2 class="section-title">4. Tus datos para la entrega</h2>
                 <form id="order-form" autocomplete="off" onsubmit="return false;">
                     
                     <div class="form-group">
@@ -107,6 +133,10 @@
 
                     <div class="form-group">
                         <label>Método de Entrega *</label>
+                        
+                        <!-- Estado del envío: gratis o a coordinar -->
+                        <div class="delivery-info hidden" id="delivery-info"></div>
+                        
                         <div class="delivery-toggle-container">
                             <label class="delivery-toggle-option" for="delivery-pickup">
                                 <input type="radio" name="delivery-method" id="delivery-pickup" value="retiro" checked>
@@ -118,19 +148,17 @@
                                 <span>Envío a domicilio</span>
                             </label>
                         </div>
-                        
-                        <!-- Mensaje de aviso de mínimo de envío -->
-                        <div class="delivery-warning hidden" id="delivery-warning-msg">
-                            ⚠️ Mínimo de compra para envío a domicilio: <strong id="delivery-min-amount">$10.000</strong>. 
-                            Te faltan <strong id="delivery-missing-amount">$4.100</strong> para habilitarlo.
-                        </div>
                     </div>
 
                     <!-- Campos Condicionales de Envío -->
                     <div class="conditional-fields hidden" id="shipping-fields">
                         <div class="form-group">
                             <label for="shipping-address">Dirección Completa *</label>
-                            <input type="text" id="shipping-address" name="shipping-address" placeholder="Calle, Altura, Piso/Depto, Barrio">
+                            <div class="address-input-wrapper">
+                                <input type="text" id="shipping-address" name="shipping-address" placeholder="Ej: Av. Corrientes 1234, Almagro" autocomplete="off">
+                                <div class="address-suggestions hidden" id="address-suggestions"></div>
+                            </div>
+
                         </div>
                         <div class="form-group">
                             <label for="shipping-date">Fecha de Envío *</label>
@@ -152,7 +180,10 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Forma de Pago *</label>
+                        <div class="payment-info">
+                            Se trabaja a pedido con <strong>seña del 50% por transferencia</strong>.
+                        </div>
+                        <label class="payment-question">¿Cómo desea pagar el otro 50%?</label>
                         <div class="payment-options">
                             <label class="payment-option" for="payment-cash">
                                 <input type="radio" name="payment-method" id="payment-cash" value="efectivo" checked>
@@ -187,6 +218,18 @@
                 <button type="button" class="btn-primary" id="btn-submit-order">
                     <span>📨 Enviar Pedido</span>
                 </button>
+
+                <!-- CARD DE CONTACTO WHATSAPP (MOBILE) -->
+                <div class="contact-whatsapp contact-whatsapp-mobile" id="contact-whatsapp-mobile">
+                    <img src="./whatsappicon.svg" alt="WhatsApp" class="contact-whatsapp-icon">
+                    <span class="contact-whatsapp-text">Contáctenos ante cualquier duda</span>
+                </div>
+            </div>
+
+            <!-- CARD DE CONTACTO WHATSAPP (DESKTOP) -->
+            <div class="contact-whatsapp contact-whatsapp-desktop" id="contact-whatsapp-desktop">
+                <img src="./whatsappicon.svg" alt="WhatsApp" class="contact-whatsapp-icon">
+                <span class="contact-whatsapp-text">Contáctenos ante cualquier duda</span>
             </div>
         </aside>
     </div>

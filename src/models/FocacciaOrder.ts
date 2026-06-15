@@ -5,6 +5,7 @@ import { CONFIG } from '../config';
 export class FocacciaOrder {
   private toppings: Topping[] = [];
   private size: FocacciaSize = 'Chica';
+  private finishing: string[] = [];
 
   setSize(size: FocacciaSize) {
     this.size = size;
@@ -12,6 +13,23 @@ export class FocacciaOrder {
 
   getSize(): FocacciaSize {
     return this.size;
+  }
+
+  toggleFinishing(name: string) {
+    const idx = this.finishing.indexOf(name);
+    if (idx >= 0) {
+      this.finishing.splice(idx, 1);
+    } else {
+      this.finishing.push(name);
+    }
+  }
+
+  getFinishing(): string[] {
+    return [...this.finishing];
+  }
+
+  clearFinishing() {
+    this.finishing = [];
   }
 
   addTopping(topping: Topping) {
@@ -26,6 +44,11 @@ export class FocacciaOrder {
 
   clearToppings() {
     this.toppings = [];
+  }
+
+  clearAll() {
+    this.toppings = [];
+    this.finishing = [];
   }
 
   getToppings(): Topping[] {
