@@ -1,9 +1,9 @@
 import { CONFIG } from './config';
 import { FocacciaOrder } from './models/FocacciaOrder';
 import { Cart } from './models/Cart';
-import type { DeliveryMethod, CustomerDetails } from './types';
-import { searchAddress } from './geo';
-import type { Suggestion } from './geo';
+import type { DeliveryMethod, CustomerDetails, ShippingZone } from './types';
+import { searchAddress, resolveShippingZone } from './geo';
+import type { Suggestion, ShippingResult } from './geo';
 
 const FINISHING_ICONS: Record<string, string> = {
   pesto: '🌿',
@@ -18,6 +18,8 @@ const currentItem = new FocacciaOrder();
 
 // Estado para la dirección seleccionada del autocompletado
 let selectedSuggestion: Suggestion | null = null;
+let currentShippingZone: ShippingZone | null = null;
+let currentShippingDistance: number | null = null;
 
 const gridComun = document.getElementById('grid-comun') as HTMLDivElement;
 const gridPremium = document.getElementById('grid-premium') as HTMLDivElement;
@@ -41,6 +43,9 @@ const shippingDateSelect = document.getElementById('shipping-date') as HTMLSelec
 const addressSuggestions = document.getElementById('address-suggestions') as HTMLDivElement;
 const pickupFields = document.getElementById('pickup-fields') as HTMLDivElement;
 const pickupDateSelect = document.getElementById('pickup-date') as HTMLSelectElement;
+const shippingZoneInfo = document.getElementById('shipping-zone-info') as HTMLDivElement;
+const shippingZoneWarning = document.getElementById('shipping-zone-warning') as HTMLDivElement;
+const shippingFieldsInner = document.getElementById('shipping-fields-inner') as HTMLDivElement;
 
 const paymentCashRadio = document.getElementById('payment-cash') as HTMLInputElement;
 const paymentTransferRadio = document.getElementById('payment-transfer') as HTMLInputElement;
@@ -326,11 +331,23 @@ function selectSuggestion(s: Suggestion) {
   selectedSuggestion = s;
   shippingAddressInput.value = s.displayName;
   addressSuggestions.classList.add('hidden');
+
+  const result = resolveShippingZone(s);
+  currentShippingZone = result.zone;
+  currentShippingDistance = result.distanceKm;
+
+  updateShippingZoneUI();
+  updateUI();
 }
 
 function resetAddressState() {
   selectedSuggestion = null;
+  currentShippingZone = null;
+  currentShippingDistance = null;
   addressSuggestions.classList.add('hidden');
+  shippingZoneInfo.classList.add('hidden');
+  shippingZoneWarning.classList.add('hidden');
+  if (shippingFieldsInner) shippingFieldsInner.classList.remove('hidden');
 }
 
 // Buscar direcciones con debounce
@@ -435,11 +452,47 @@ function updateToppingPrices() {
 
 // ---------------------------------------------------------------------------
 
+function updateShippingZoneUI() {
+  if (!currentShippingZone) {
+    shippingZoneInfo.classList.add('hidden');
+    shippingZoneWarning.classList.add('hidden');
+    if (shippingFieldsInner) shippingFieldsInner.classList.remove('hidden');
+    return;
+  }
+
+  const cartTotal = cart.calculateTotal();
+
+  if (currentShippingZone === 'outside_caba') {
+    shippingZoneWarning.classList.remove('hidden');
+    shippingZoneInfo.classList.add('hidden');
+    if (shippingFieldsInner) shippingFieldsInner.classList.add('hidden');
+    shippingZoneWarning.innerHTML = `⚠️ La dirección está fuera de CABA. <strong>No realizamos envíos fuera de la ciudad</strong>. Podés retirar tu pedido en <strong>Parque Centenario</strong>.`;
+    return;
+  }
+
+  shippingZoneWarning.classList.add('hidden');
+  if (shippingFieldsInner) shippingFieldsInner.classList.remove('hidden');
+  shippingZoneInfo.classList.remove('hidden');
+
+  if (currentShippingZone === 'within_3km') {
+    shippingZoneInfo.className = 'delivery-info delivery-info-free';
+    shippingZoneInfo.innerHTML = `✅ <strong>Envío gratis</strong> — estás dentro de la zona de cobertura.`;
+  } else if (currentShippingZone === 'caba') {
+    if (cartTotal >= CONFIG.MIN_DELIVERY_AMOUNT) {
+      shippingZoneInfo.className = 'delivery-info delivery-info-free';
+      shippingZoneInfo.innerHTML = `🎉 Tu pedido supera los <strong>$${CONFIG.MIN_DELIVERY_AMOUNT.toLocaleString('es-AR')}</strong> — <strong>envío gratis</strong>.`;
+    } else {
+      const missing = CONFIG.MIN_DELIVERY_AMOUNT - cartTotal;
+      shippingZoneInfo.className = 'delivery-info delivery-info-pay';
+      shippingZoneInfo.innerHTML = `📦 Costo de envío <strong>a convenir</strong>. Te faltan <strong>$${missing.toLocaleString('es-AR')}</strong> para envío gratis.`;
+    }
+  }
+}
+
 function updateUI() {
   const currentSize = sizeGrandeRadio.checked ? 'Grande' : 'Chica';
   currentItem.setSize(currentSize);
 
-  // Precios dinámicos según tamaño
   updateToppingPrices();
 
   const cartTotal = cart.calculateTotal();
@@ -447,20 +500,27 @@ function updateUI() {
   summaryTotalPriceSpan.textContent = `$${cartTotal.toLocaleString('es-AR')}`;
   panelItemsCount.textContent = count === 0 ? 'Sin items' : `${count} focaccia${count !== 1 ? 's' : ''}`;
 
-  // Preview del item actual
   updateCurrentPreview();
 
-  // Info de envío: gratis o a coordinar
-  const isFreeDelivery = cartTotal >= CONFIG.MIN_DELIVERY_AMOUNT;
-  if (isFreeDelivery) {
-    deliveryInfo.className = 'delivery-info delivery-info-free';
-    deliveryInfo.innerHTML = `🎉 Envío a domicilio gratis por compras mayores a <strong>$${CONFIG.MIN_DELIVERY_AMOUNT.toLocaleString('es-AR')}</strong>`;
-    deliveryInfo.classList.remove('hidden');
+  if (deliveryShippingRadio.checked) {
+    updateShippingZoneUI();
+    deliveryInfo.classList.add('hidden');
   } else {
-    const missing = CONFIG.MIN_DELIVERY_AMOUNT - cartTotal;
-    deliveryInfo.className = 'delivery-info delivery-info-pay';
-    deliveryInfo.innerHTML = `📦 Los envíos a domicilio son en <strong>CABA</strong> y <strong>se coordinan con el cliente</strong>. Te faltan <strong>$${missing.toLocaleString('es-AR')}</strong> para envío a domicilio gratis.`;
-    deliveryInfo.classList.remove('hidden');
+    shippingZoneInfo.classList.add('hidden');
+    shippingZoneWarning.classList.add('hidden');
+    if (shippingFieldsInner) shippingFieldsInner.classList.remove('hidden');
+
+    const isFreeDelivery = cartTotal >= CONFIG.MIN_DELIVERY_AMOUNT;
+    if (isFreeDelivery) {
+      deliveryInfo.className = 'delivery-info delivery-info-free';
+      deliveryInfo.innerHTML = `🎉 Envío a domicilio gratis por compras mayores a <strong>$${CONFIG.MIN_DELIVERY_AMOUNT.toLocaleString('es-AR')}</strong>`;
+      deliveryInfo.classList.remove('hidden');
+    } else {
+      const missing = CONFIG.MIN_DELIVERY_AMOUNT - cartTotal;
+      deliveryInfo.className = 'delivery-info delivery-info-pay';
+      deliveryInfo.innerHTML = `📦 Los envíos a domicilio son en <strong>CABA</strong>.`;
+      deliveryInfo.classList.remove('hidden');
+    }
   }
 }
 
@@ -469,11 +529,12 @@ function toggleDeliveryFields(method: DeliveryMethod) {
     shippingFields.classList.remove('hidden');
     shippingAddressInput.setAttribute('required', 'true');
     pickupFields.classList.add('hidden');
+    deliveryInfo.classList.add('hidden');
   } else {
     shippingFields.classList.add('hidden');
     shippingAddressInput.removeAttribute('required');
     pickupFields.classList.remove('hidden');
-    // Si cambia a retiro, reseteamos validación de dirección
+    deliveryInfo.classList.add('hidden');
     resetAddressState();
   }
 }
@@ -558,6 +619,15 @@ function submitOrder() {
       shippingAddressInput.focus();
       return;
     }
+    if (!selectedSuggestion || !currentShippingZone) {
+      alert('Por favor, seleccioná una dirección de las sugerencias para que podamos calcular el envío.');
+      shippingAddressInput.focus();
+      return;
+    }
+    if (currentShippingZone === 'outside_caba') {
+      alert('No realizamos envíos fuera de CABA. Por favor, seleccioná "Retiro en Parque Centenario" para completar tu pedido.');
+      return;
+    }
     deliveryDate = shippingDateSelect.value;
   } else {
     deliveryDate = pickupDateSelect.value;
@@ -577,7 +647,8 @@ function submitOrder() {
     apartment,
     tower,
     deliveryDate,
-    paymentMethod
+    paymentMethod,
+    shippingZone: deliveryMethod === 'envio' ? currentShippingZone ?? undefined : undefined,
   };
 
   cart.setCustomerDetails(details);

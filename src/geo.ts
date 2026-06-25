@@ -1,37 +1,62 @@
 import { CONFIG } from './config';
-
-// ---------------------------------------------------------------------------
-// Interfaces
-// ---------------------------------------------------------------------------
+import type { ShippingZone } from './types';
 
 export interface Suggestion {
   displayName: string;
   lat: number;
   lng: number;
-  /** Nombre de la calle si Nominatim lo devuelve */
   street?: string;
-  /** Altura (número de puerta) */
   housenumber?: string;
-  /** Barrio / suburbio */
   suburb?: string;
+  isCaba?: boolean;
 }
 
-// ---------------------------------------------------------------------------
-// Consulta a Nominatim (OpenStreetMap) para autocompletado de direcciones
-// ---------------------------------------------------------------------------
+export interface ShippingResult {
+  zone: ShippingZone;
+  distanceKm: number;
+}
+
+export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function toRad(deg: number): number {
+  return deg * (Math.PI / 180);
+}
+
+export function resolveShippingZone(suggestion: Suggestion): ShippingResult {
+  const distanceKm = calculateDistance(
+    CONFIG.REFERENCE_POINT.lat,
+    CONFIG.REFERENCE_POINT.lng,
+    suggestion.lat,
+    suggestion.lng
+  );
+
+  if (distanceKm <= CONFIG.FREE_DELIVERY_RADIUS_KM) {
+    return { zone: 'within_3km', distanceKm: Math.round(distanceKm * 10) / 10 };
+  }
+
+  if (suggestion.isCaba) {
+    return { zone: 'caba', distanceKm: Math.round(distanceKm * 10) / 10 };
+  }
+
+  return { zone: 'outside_caba', distanceKm: Math.round(distanceKm * 10) / 10 };
+}
 
 let lastQueryTime = 0;
 
-/**
- * Busca direcciones en OpenStreetMap usando el API de Nominatim.
- * Respeta la política de uso: máximo 1 request por segundo.
- * Filtra por país (AR) y ciudad (Buenos Aires).
- */
 export async function searchAddress(query: string): Promise<Suggestion[]> {
   const trimmed = query.trim();
   if (trimmed.length < 4) return [];
 
-  // Rate limiting: respetar 1 request/segundo
   const now = Date.now();
   const elapsed = now - lastQueryTime;
   if (elapsed < 1100) {
@@ -39,15 +64,12 @@ export async function searchAddress(query: string): Promise<Suggestion[]> {
   }
   lastQueryTime = Date.now();
 
-  // Construimos los params a mano porque URLSearchParams escapa comas y eso rompe viewbox
   const params = [
     `q=${encodeURIComponent(trimmed)}`,
     `format=json`,
     `addressdetails=1`,
     `limit=${CONFIG.OSM_LIMIT}`,
     `countrycodes=${encodeURIComponent(CONFIG.OSM_COUNTRY_CODES)}`,
-    // Sin city — conflictúa con q (free-form query)
-    // viewbox: left,bottom,right,top  |  CABA aprox: lon -58.53..-58.33, lat -34.70..-34.53
     `bounded=1`,
     `viewbox=-58.5316,-34.7035,-58.3352,-34.5272`,
   ].join('&');
@@ -75,5 +97,8 @@ export async function searchAddress(query: string): Promise<Suggestion[]> {
     street: item.address?.road ?? item.address?.pedestrian ?? undefined,
     housenumber: item.address?.house_number ?? undefined,
     suburb: item.address?.suburb ?? item.address?.neighbourhood ?? undefined,
+    isCaba: item.display_name.toLowerCase().includes('ciudad autónoma de buenos aires') ||
+            item.address?.city?.toLowerCase().includes('buenos aires') ||
+            item.address?.state?.toLowerCase().includes('ciudad autónoma'),
   }));
 }

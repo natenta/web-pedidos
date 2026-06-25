@@ -1,6 +1,8 @@
 import { FocacciaOrder } from './FocacciaOrder';
-import type { CustomerDetails } from '../types';
+import type { CustomerDetails, ShippingZone } from '../types';
 import { CONFIG } from '../config';
+
+export type ShippingCost = 'gratis' | 'a_convenir' | 'no_disponible';
 
 export class Cart {
   private items: FocacciaOrder[] = [];
@@ -44,8 +46,18 @@ export class Cart {
     return 'Común';
   }
 
-  isDeliveryFree(): boolean {
-    return this.calculateTotal() >= CONFIG.MIN_DELIVERY_AMOUNT;
+  resolveShippingCost(zone?: ShippingZone): ShippingCost {
+    if (!zone) return 'a_convenir';
+    if (zone === 'outside_caba') return 'no_disponible';
+    if (zone === 'within_3km') return 'gratis';
+    if (zone === 'caba') {
+      return this.calculateTotal() >= CONFIG.MIN_DELIVERY_AMOUNT ? 'gratis' : 'a_convenir';
+    }
+    return 'a_convenir';
+  }
+
+  isDeliveryFree(zone?: ShippingZone): boolean {
+    return this.resolveShippingCost(zone) === 'gratis';
   }
 
   generateWhatsAppMessage(): string {
@@ -77,12 +89,22 @@ export class Cart {
     });
 
     msg += `\u{1F4E6} *Modo de Entrega:* ${isEnvio ? 'Envío a domicilio' : 'Retiro por Parque Centenario'}\n`;
-    if (isEnvio) {
-      if (this.isDeliveryFree()) {
+    if (isEnvio && details.shippingZone) {
+      const shippingCost = this.resolveShippingCost(details.shippingZone);
+      if (shippingCost === 'gratis') {
         msg += `✨ *Costo de Envío:* Gratis\n`;
-      } else {
+      } else if (shippingCost === 'a_convenir') {
         msg += `💬 *Costo de Envío:* A coordinar con el cliente\n`;
+      } else {
+        msg += `❌ *Envío:* No disponible — solo retiro en Parque Centenario\n`;
       }
+      let addressLine = `\u{1F4CD} *Dirección:* ${details.address}`;
+      const extras = [details.floor ? `Piso ${details.floor}` : '', details.apartment ? `Depto ${details.apartment}` : '', details.tower ? `Torre ${details.tower}` : ''].filter(Boolean).join(', ');
+      if (extras) addressLine += ` (${extras})`;
+      msg += addressLine + `\n`;
+      msg += `\u{1F4C5} *Fecha de Envío:* ${details.deliveryDate}\n`;
+    } else if (isEnvio) {
+      msg += `💬 *Costo de Envío:* A coordinar con el cliente\n`;
       let addressLine = `\u{1F4CD} *Dirección:* ${details.address}`;
       const extras = [details.floor ? `Piso ${details.floor}` : '', details.apartment ? `Depto ${details.apartment}` : '', details.tower ? `Torre ${details.tower}` : ''].filter(Boolean).join(', ');
       if (extras) addressLine += ` (${extras})`;

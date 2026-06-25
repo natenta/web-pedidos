@@ -158,28 +158,34 @@
                                 <input type="text" id="shipping-address" name="shipping-address" placeholder="Ej: Av. Corrientes 1234, Almagro" autocomplete="off">
                                 <div class="address-suggestions hidden" id="address-suggestions"></div>
                             </div>
+
                         </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="shipping-floor">Piso</label>
-                                <input type="text" id="shipping-floor" name="shipping-floor" placeholder="Ej: 3">
-                            </div>
-                            <div class="form-group">
-                                <label for="shipping-apartment">Departamento</label>
-                                <input type="text" id="shipping-apartment" name="shipping-apartment" placeholder="Ej: B">
-                            </div>
-                            <div class="form-group">
-                                <label for="shipping-tower">Torre</label>
-                                <input type="text" id="shipping-tower" name="shipping-tower" placeholder="Ej: 2">
-                            </div>
-                        </div>
+                        <div class="delivery-info hidden" id="shipping-zone-info"></div>
+                        <div class="shipping-zone-warning hidden" id="shipping-zone-warning"></div>
 
-                        <div class="form-group">
-                            <label for="shipping-date">Fecha de Envío *</label>
-                            <select id="shipping-date" name="shipping-date">
-                                <!-- Dinámico -->
-                            </select>
+                        <div id="shipping-fields-inner">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="shipping-floor">Piso</label>
+                                    <input type="text" id="shipping-floor" name="shipping-floor" placeholder="Ej: 3">
+                                </div>
+                                <div class="form-group">
+                                    <label for="shipping-apartment">Departamento</label>
+                                    <input type="text" id="shipping-apartment" name="shipping-apartment" placeholder="Ej: B">
+                                </div>
+                                <div class="form-group">
+                                    <label for="shipping-tower">Torre</label>
+                                    <input type="text" id="shipping-tower" name="shipping-tower" placeholder="Ej: 2">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="shipping-date">Fecha de Envío *</label>
+                                <select id="shipping-date" name="shipping-date">
+                                    <!-- Dinámico -->
+                                </select>
+                            </div>
                         </div>
                     </div>
 

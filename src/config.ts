@@ -2,7 +2,13 @@ import { Topping } from './models/Topping';
 
 export const CONFIG = {
   WHATSAPP_NUMBER: import.meta.env.VITE_WHATSAPP_NUMBER || '5491126515156',
-  MIN_DELIVERY_AMOUNT: Number(import.meta.env.VITE_MIN_DELIVERY_AMOUNT) || 10000,
+  MIN_DELIVERY_AMOUNT: Number(import.meta.env.VITE_MIN_DELIVERY_AMOUNT) || 40000,
+  FREE_DELIVERY_RADIUS_KM: Number(import.meta.env.VITE_FREE_DELIVERY_RADIUS_KM) || 3,
+  REFERENCE_POINT: {
+    lat: Number(import.meta.env.VITE_REF_LAT) || -34.6076,
+    lng: Number(import.meta.env.VITE_REF_LNG) || -58.4285,
+    address: 'Leopoldo Marechal 1350, CABA',
+  },
   DELIVERY_DAYS: (import.meta.env.VITE_DELIVERY_DAYS || 'Viernes,Sábado').split(','),
   PICKUP_DAYS: (import.meta.env.VITE_PICKUP_DAYS || 'Martes,Jueves').split(','),
 

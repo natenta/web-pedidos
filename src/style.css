@@ -40,7 +40,6 @@ body {
   color: var(--color-text-main);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  padding-bottom: 80px;
 }
 
 /* CONTENEDOR PRINCIPAL */
@@ -787,6 +786,10 @@ body {
   transform: translateY(1px);
 }
 
+body {
+  padding-bottom: 140px;
+}
+
 /* SECCIÓN CARRITO (en main content) */
 .cart-item {
   display: flex;
@@ -935,6 +938,23 @@ body {
 }
 
 /* Warning de dirección fuera de rango */
+.shipping-zone-warning {
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 8px;
+  margin-bottom: 12px;
+  animation: slideDown 0.25s ease-out;
+  background-color: rgba(235, 123, 88, 0.12);
+  border: 1.5px solid var(--color-terracotta);
+  color: var(--color-terracotta-dark);
+  line-height: 1.5;
+}
+
+.shipping-zone-warning strong {
+  color: #b33a1a;
+}
 
 
 /* UTILIDADES Y EFECTOS */
