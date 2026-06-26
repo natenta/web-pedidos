@@ -654,18 +654,8 @@ function submitOrder() {
   cart.setCustomerDetails(details);
 
   const msg = cart.generateWhatsAppMessage();
-  const encoded = encodeURIComponent(msg);
-  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-  if (navigator.share && isMobile) {
-    navigator.share({ text: msg }).catch(() => {
-      const waUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encoded}`;
-      window.open(waUrl, '_blank');
-    });
-  } else {
-    const waUrl = `https://api.whatsapp.com/send?phone=${CONFIG.WHATSAPP_NUMBER}&text=${encoded}`;
-    window.open(waUrl, '_blank');
-  }
+  const waUrl = `https://api.whatsapp.com/send?phone=${CONFIG.WHATSAPP_NUMBER}&text=${encodeURIComponent(msg)}`;
+  window.open(waUrl, '_blank');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
