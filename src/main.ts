@@ -7,9 +7,9 @@ import type { Suggestion, ShippingResult } from './geo';
 
 const FINISHING_ICONS: Record<string, string> = {
   pesto: '🌿',
-  aceite_oliva: '🫗',
+  aceite_oliva: '💧',
   almibar: '🍯',
-  romero: '🌱',
+  romero: '🌾',
   sal_gruesa: '🧂'
 };
 
@@ -205,7 +205,7 @@ function renderCart() {
 
     const title = document.createElement('div');
     title.className = 'cart-item-title';
-    const sizeEmoji = item.getSize() === 'Grande' ? '🐘' : '🫓';
+    const sizeEmoji = item.getSize() === 'Grande' ? '🍕' : '🥖';
     title.textContent = `${sizeEmoji} Focaccia ${item.getSize()} - ${item.detectCategory()}`;
 
     const toppings = document.createElement('div');
@@ -653,10 +653,19 @@ function submitOrder() {
 
   cart.setCustomerDetails(details);
 
-  const encodedMsg = cart.generateWhatsAppMessage();
-  const whatsappUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encodedMsg}`;
+  const msg = cart.generateWhatsAppMessage();
+  const encoded = encodeURIComponent(msg);
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-  window.open(whatsappUrl, '_blank');
+  if (navigator.share && isMobile) {
+    navigator.share({ text: msg }).catch(() => {
+      const waUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encoded}`;
+      window.open(waUrl, '_blank');
+    });
+  } else {
+    const waUrl = `https://api.whatsapp.com/send?phone=${CONFIG.WHATSAPP_NUMBER}&text=${encoded}`;
+    window.open(waUrl, '_blank');
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

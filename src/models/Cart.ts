@@ -67,12 +67,12 @@ export class Cart {
     const isEnvio = details.deliveryMethod === 'envio';
     const total = this.calculateTotal();
 
-    let msg = `\u{1F355} *Nuevo Pedido - Natenta*\n\n`;
+    let msg = `\u{1F35E} *Nuevo Pedido - Natenta*\n\n`;
     msg += `\u{1F464} *Cliente:* ${details.name}\n\n`;
 
     this.items.forEach((item, index) => {
       msg += `\u{1F6D2} *Pedido #${index + 1}*\n`;
-      msg += `\u{1F355} Focaccia ${item.getSize()} (${item.detectCategory()})\n`;
+      msg += `\u{1F35E} Focaccia ${item.getSize()} (${item.detectCategory()})\n`;
       msg += `\u{1F33F} Toppings: `;
       const toppings = item.getToppings();
       if (toppings.length === 0) {
@@ -83,7 +83,7 @@ export class Cart {
       msg += `\n`;
       const finishingList = item.getFinishing();
       if (finishingList.length > 0) {
-        msg += `\u{1F9F4} Terminación: ${finishingList.join(', ')}\n`;
+        msg += `\u{1F9C2} Terminación: ${finishingList.join(', ')}\n`;
       }
       msg += `\n`;
     });
@@ -118,6 +118,6 @@ export class Cart {
     msg += `\u{1F4B0} *Total del Pedido:* $${total.toLocaleString('es-AR')} ARS\n\n`;
     msg += `¡Muchas gracias! Quedo a la espera de tu confirmación.`;
 
-    return encodeURIComponent(msg);
+    return msg;
   }
 }
